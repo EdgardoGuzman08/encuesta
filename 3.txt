@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encuesta</title>
+    <script>
+        function mostrarAlerta(mensaje) {
+            alert(mensaje);
+        }
+    </script>
+</head>
+<body>
+<?php
+require_once 'db.php';
+
+// Verifica si se ha enviado un UUID en la URL
+if (isset($_GET['uuid'])) {
+    $uuid = $_GET['uuid'];
+
+    // Verifica si el código QR ya ha sido escaneado
+    $sqlVerificar = "SELECT escaneado FROM encuestas WHERE codigo_qr LIKE '%codigo_qr_$uuid%.png' AND activo = 1";
+    $result = $conn->query($sqlVerificar);
+
+    if ($result && $result->num_rows > 0) {
+        $row = $result->fetch_assoc();
+        $escaneado = $row['escaneado'];
+
+        if ($escaneado == 1) {
+            // El código QR ya ha sido escaneado, muestra una alerta
+            echo "<script>mostrarAlerta('Este código QR ya ha sido escaneado.'); 
+                    window.location.href = 'agradecimiento.php';
+                    </script>";
+            //header("Location: agradecimiento.php");
+            exit;
+        } else {
+            // Actualiza el campo "escaneado" a 1 en la base de datos
+            $sqlActualizar = "UPDATE encuestas SET escaneado = 1 WHERE codigo_qr LIKE '%codigo_qr_$uuid%.png'";
+            if ($conn->query($sqlActualizar) === TRUE) {
+                // Muestra una alerta de éxito
+                echo "<script>mostrarAlerta('El código QR se ha escaneado correctamente.');</script>";
+            } else {
+                // Muestra una alerta de error
+                echo "<script>mostrarAlerta('Error al actualizar el estado del código QR.');</script>";
+            }
+        }
+    } else {
+        // El código QR no es válido, no existe o no está activo, muestra una alerta
+        echo "<script>mostrarAlerta('Código QR inválido o no disponible.');
+                window.location.href = 'agradecimiento.php';
+                </script>";
+        //header("Location: agradecimiento.php");
+        exit;
+    }
+}
+?>
+
+<h1>Encuesta</h1>
+<p>Probando esto</p>
+
+</body>
+</html>
